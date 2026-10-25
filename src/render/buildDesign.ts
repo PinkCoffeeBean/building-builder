@@ -363,4 +363,3 @@ function faceStrip(
   }
 }
 
-export { cellTop };

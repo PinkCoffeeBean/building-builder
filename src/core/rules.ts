@@ -1,8 +1,8 @@
-import { def, facadeLayer, isFacadeDef, type EnvDef, type FacadeDef } from '../catalog/catalog';
+import { facadeLayer, isFacadeDef, type EnvDef, type FacadeDef } from '../catalog/catalog';
 import { footprintRect } from '../render/builders/facade';
 import { localRectToHole, safeDef, BASE_MARGIN } from '../render/buildDesign';
 import { CellMap, DIR_RIGHT, cellCenterX, cellCenterZ } from './grid';
-import type { Design, EnvItem, FacadeItem, RoofItem } from './types';
+import type { Design, FacadeItem, RoofItem } from './types';
 
 /** Laag waarin een gevelelement ruimte inneemt: overlap binnen dezelfde laag is verboden. */
 export function layerOf(d: FacadeDef): 'wall' | 'outside' | 'ground' {
@@ -106,9 +106,3 @@ export function sanitize(design: Design) {
   // dakinstellingen alleen op bovenste cellen bewaren
   for (const c of design.cells) if (c.roof && !cm.isTop(c)) delete c.roof;
 }
-
-export function itemDef(id: string) {
-  return def(id);
-}
-
-export type { EnvItem };

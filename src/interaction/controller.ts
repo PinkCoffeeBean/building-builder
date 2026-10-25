@@ -528,6 +528,25 @@ export class Controller {
   }
 
   private facadePlan(hit: Hit, d: FacadeDef): Plan | null {
+    // bestaand gevelbord aanklikken met het bordgereedschap = tekst en kleuren aanpassen
+    if (d.kind === 'sign' && hit.kind === 'facade') {
+      const it = this.store.design.facade.find((f) => f.id === hit.id);
+      if (it && def(it.type).kind === 'sign') {
+        const { color, accent } = this.colorsFor(d);
+        const text = this.tool.text || d.defaultText;
+        return {
+          key: `sign-edit|${it.id}|${text}|${color}|${accent}`,
+          valid: true,
+          hint: `Klik om dit bord “${text}” te geven`,
+          ghost: () => this.boxGhostAround(hit.obj!, color),
+          apply: () =>
+            this.commit((ds) => {
+              const f = ds.facade.find((q) => q.id === it.id);
+              if (f) Object.assign(f, { text, color, accent });
+            }, 'Gevelbord aangepast'),
+        };
+      }
+    }
     if (!hit.cell || !hit.dir || hit.dir === 'py' || hit.dir === 'ny') {
       if (hit.kind === 'volume' || hit.kind === 'roof') return { key: 'face-no', valid: false, reason: 'Kies een gevelvlak (zijkant van een blok)', ghost: () => null, apply: () => {} };
       return null;

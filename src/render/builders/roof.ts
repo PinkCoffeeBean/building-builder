@@ -246,8 +246,7 @@ function buildShedRegion(region: Cell[], cm: CellMap, W: number, D: number, buck
   };
   const hAt = (x: number, z: number) => y0 + base + rise * tAt(x, z);
   const inRegion = new Set(region.map((c) => key(c.x, c.y, c.z)));
-  const sheetMat = clay(style.color, 0.55);
-  sheetMat.side = THREE.DoubleSide;
+  const sheetMat = clay(style.color, 0.55, true);
   const beamMat = clay(style.accent ?? d.accent, 0.85);
   const ov = d.edge;
 

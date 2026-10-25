@@ -111,7 +111,8 @@ export class ThumbRenderer {
       const [sw, sh] = def.span;
       d.plot = { w: sw, d: 1, floors: 6 };
       const y0 = def.notGround ? 1 : 0;
-      for (let x = 0; x < sw; x++) for (let y = 0; y < y0 + sh; y++) d.cells.push({ x, y, z: 0, color: wall, cladding: 'stucco' });
+      for (let x = 0; x < sw; x++)
+        for (let y = 0; y < y0 + sh + 1; y++) d.cells.push({ x, y, z: 0, color: wall, cladding: 'stucco', roof: { type: 'roof-none', color: wall } });
       d.facade.push({ id: 't', type: def.id, x: 0, y: y0, z: 0, dir: 'pz', align: 0, color: c, accent: a });
       focus = (g) => {
         const box = new THREE.Box3();

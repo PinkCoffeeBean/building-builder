@@ -205,7 +205,7 @@ export class Stage {
   }
 
   /** Zoom en doel passend maken op een kader. */
-  frame(box: THREE.Box3, padding = 1.25) {
+  frame(box: THREE.Box3, padding = 1.25, cropAspect?: number) {
     if (box.isEmpty()) return;
     const c = box.getCenter(new THREE.Vector3());
     this.target.copy(c);
@@ -220,8 +220,11 @@ export class Stage {
       w = Math.max(w, Math.abs(p.dot(right)));
       h = Math.max(h, Math.abs(p.dot(up)));
     }
-    const aspect = (this.container.clientWidth || 1) / (this.container.clientHeight || 1);
-    const needH = Math.max(h * 2, (w * 2) / aspect) * padding;
+    const screen = (this.container.clientWidth || 1) / (this.container.clientHeight || 1);
+    // bij een uitsnede (fotomodus) passend maken binnen die uitsnede
+    const aspect = cropAspect ? Math.min(screen, cropAspect) : screen;
+    const cropH = cropAspect && cropAspect > screen ? screen / cropAspect : 1;
+    const needH = (Math.max(h * 2, (w * 2) / aspect) * padding) / cropH;
     this.zoom = Math.min(4, Math.max(0.35, this.viewHeight / needH));
     this.updateCamera();
   }
@@ -268,11 +271,12 @@ export class Stage {
     for (const fn of this.onFrame) fn();
     if (!this.needsRender) return;
     this.needsRender = false;
-    this.render();
+    // tijdens camera-animaties de snelle weg (zonder AO); het eindbeeld krijgt alles
+    this.render(true, !this.anim);
   }
 
-  render(overlay = true) {
-    if (this.aoEnabled) this.composer.render();
+  render(overlay = true, quality = true) {
+    if (this.aoEnabled && quality) this.composer.render();
     else this.renderer.render(this.scene, this.camera);
     if (overlay && this.overlayScene.children.length > 2) {
       this.renderer.autoClear = false;

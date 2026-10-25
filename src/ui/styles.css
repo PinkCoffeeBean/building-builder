@@ -225,7 +225,7 @@ button {
 }
 .items {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
 .item {
@@ -242,6 +242,8 @@ button {
   text-align: center;
   color: var(--ink-2);
   min-height: 92px;
+  overflow-wrap: anywhere;
+  hyphens: auto;
 }
 .item img,
 .item .glyph {
@@ -748,10 +750,15 @@ body.photo .mission-hud {
   display: none !important;
 }
 body.photo #app {
-  grid-template-rows: 0 1fr;
+  grid-template-rows: 1fr;
 }
 body.photo .main {
-  grid-template-columns: 0 0 1fr 0;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+}
+body.photo .viewport {
+  grid-column: 1;
+  grid-row: 1;
 }
 .photo-panel {
   position: fixed;

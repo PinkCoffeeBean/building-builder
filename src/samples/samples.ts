@@ -128,7 +128,7 @@ function bauhaus(): Design {
     f('win-slit', 5, 3, 3, 'px', dark, '#d9d6cf'),
     f('win-cross', 5, 4, 3, 'px', dark, '#d9d6cf'),
   );
-  d.env.push(e('cypress', -3.95, 1.9, '#5f8f52', '#7a5536'), e('pot', 1.0, 1.65, '#e5707a', '#c4673f'));
+  d.env.push(e('tree-cypress', -3.0, 1.75, '#5f8f52', '#7a5536'), e('pot', 1.0, 1.65, '#e5707a', '#c4673f'));
   d.settings = { background: '#4b5d6e', base: '#d7d3cc', plinth: '#26292e', bands: null };
   return d;
 }

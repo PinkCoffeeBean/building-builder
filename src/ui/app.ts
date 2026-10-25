@@ -5,7 +5,6 @@ import {
   CATEGORIES,
   CLADDINGS,
   PALETTES,
-  def,
   isFacadeDef,
   type AnyDef,
   type CategoryId,
@@ -89,6 +88,11 @@ export class App {
         this.status(`Kleur ${c} opgepikt`, 'ok');
       },
       toolChanged: () => {
+        const cat = this.controller.def.category;
+        if (cat !== this.category) {
+          this.category = cat;
+          this.renderRail();
+        }
         this.renderPalette();
         this.renderInspector();
       },
@@ -545,17 +549,20 @@ export class App {
     this.stage.invalidate();
   }
 
+  /** Beeldverhouding van de foto-uitsnede (alleen in fotomodus). */
+  photoAspect = 1;
+
   frameAll() {
     const box = new THREE.Box3();
     if (this.built)
       this.built.group.traverse((o) => {
-        if ((o as THREE.Mesh).isMesh && o.userData.kind !== 'ground') box.expandByObject(o);
+        if ((o as THREE.Mesh).isMesh && (this.photo || o.userData.kind !== 'ground')) box.expandByObject(o);
       });
     const d = this.store.design;
     // minimaal de kavel laten zien als er weinig staat
     const plot = new THREE.Box3(new THREE.Vector3(-d.plot.w / 2, 0, -d.plot.d / 2), new THREE.Vector3(d.plot.w / 2, 1.5, d.plot.d / 2));
     if (box.isEmpty() || d.cells.length < 3) box.union(plot);
-    this.stage.frame(box, this.photo ? 1.12 : 1.3);
+    this.stage.frame(box, this.photo ? 1.1 : 1.3, this.photo ? this.photoAspect : undefined);
   }
 
   setView(mode: 'iso' | 'front') {
@@ -753,7 +760,7 @@ export class App {
     this.controller.clearGhost();
     this.controller.viewOnly = true;
     this.stage.grid.visible = false;
-    let aspect = 1;
+    let aspect = this.photoAspect;
     let res = 2400;
     const frameEl = h('div', { class: 'photo-frame' });
     document.body.append(frameEl);
@@ -799,7 +806,7 @@ export class App {
     ];
     const renderAsp = () => {
       clear(aspSeg);
-      for (const [l, v] of aspects) aspSeg.append(h('button', { class: v === aspect ? 'on' : '', onclick: () => ((aspect = v), renderAsp(), updateFrame()) }, l));
+      for (const [l, v] of aspects) aspSeg.append(h('button', { class: v === aspect ? 'on' : '', onclick: () => ((aspect = this.photoAspect = v), renderAsp(), updateFrame(), this.frameAll(), syncSliders()) }, l));
     };
     renderAsp();
     const resSel = h('select', { class: 'sel', onchange: (e: Event) => (res = Number((e.target as HTMLSelectElement).value)) }, ...[1600, 2400, 3200, 4096].map((r) => h('option', { value: String(r), selected: r === res }, `${r} px`))) as HTMLSelectElement;
@@ -979,4 +986,3 @@ export class App {
   }
 }
 
-export { def };

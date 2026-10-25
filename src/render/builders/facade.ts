@@ -10,7 +10,7 @@ import type {
 } from '../../catalog/catalog';
 import { FL } from '../../core/grid';
 import type { FacadeItem } from '../../core/types';
-import { clay, clearGlass, cladMat, curtain, emissive, glass, stripeMat, textTexture } from '../materials';
+import { clay, clearGlass, cladMat, curtain, emissive, glass, letterMats, stripeMat } from '../materials';
 import { boxAt, cyl, mesh, quad, rboxAt, sphere } from '../shapes';
 
 /* =====================================================================
@@ -521,9 +521,6 @@ function buildCanopy(d: CanopyDef, item: FacadeItem) {
     g.add(rboxAt(main, x0, d.height, 0, x1, top, d.depth, 0.012));
     g.add(rboxAt(main, x0, -FL, 0, x0 + t, d.height + 0.001, d.depth, 0.012));
     g.add(rboxAt(main, x1 - t, -FL, 0, x1, d.height + 0.001, d.depth, 0.012));
-    // binnenkant iets lichter vlak tegen gevel (kleurvlak rond deur)
-    const inner = clay(shade(item.color, 0.08), 0.9);
-    g.add(face(inner, [[x0 + t, -FL, 0.002], [x1 - t, -FL, 0.002], [x1 - t, d.height, 0.002], [x0 + t, d.height, 0.002]], [0, 0, 1]));
     if (d.lamp) g.add(mesh(cyl(0.03, 0.03, 0.01, 20), emissive(item.accent, 2.2), cx, d.height - 0.004, d.depth * 0.5, false));
   } else {
     // gestreepte markies: schuin doek + geschulpte rand + armpjes
@@ -548,8 +545,7 @@ function buildCanopy(d: CanopyDef, item: FacadeItem) {
       s.absarc(sw / 2, -0.03, sw / 2, 0, Math.PI, true);
       s.lineTo(0, 0);
       const sg = new THREE.ShapeGeometry(s, 10);
-      const m = new THREE.Mesh(sg, clay(i % 2 ? item.accent : item.color, 0.85));
-      (m.material as THREE.Material).side = THREE.DoubleSide;
+      const m = new THREE.Mesh(sg, clay(i % 2 ? item.accent : item.color, 0.85, true));
       m.position.set(x0 + i * sw, yLow, d.depth);
       m.castShadow = true;
       g.add(m);
@@ -578,12 +574,10 @@ function buildSign(d: SignDef, item: FacadeItem) {
   const text = (item.text ?? d.defaultText).toUpperCase().slice(0, 14) || ' ';
   const main = clay(item.color, 0.8);
   const fp = footprintRect(d, item);
-  const tex = textTexture(text, d.style === 'blade', item.accent);
-  const letters = new THREE.MeshStandardMaterial({ map: tex, transparent: true, roughness: 0.6, alphaTest: 0.2 });
+  const { letters, shadow: shadowLetters, tex } = letterMats(text, d.style === 'blade', item.accent);
   const t = 0.05;
   g.add(rboxAt(main, fp.x0, fp.y0, 0, fp.x1, fp.y1, t, 0.014));
   // letters (licht verhoogd, met schaduw-effect via tweede laag)
-  const shadowLetters = new THREE.MeshBasicMaterial({ map: tex, transparent: true, color: '#000000', opacity: 0.18, alphaTest: 0.2 });
   const w = fp.x1 - fp.x0;
   const h = fp.y1 - fp.y0;
   const aspect = tex.image.width / tex.image.height;

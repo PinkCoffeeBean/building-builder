@@ -160,7 +160,7 @@ function claddingTextures(id: CladdingId): TexPair {
         (ctx) => {
           noise(ctx, 22, 9, 235);
           for (let i = 0; i < 40; i++) {
-            ctx.fillStyle = `rgba(0,0,0,${r() * 0.035})`;
+            ctx.fillStyle = `rgba(0,0,0,${r() * 0.012})`;
             ctx.beginPath();
             ctx.ellipse(r() * SIZE, r() * SIZE, 20 + r() * 60, 10 + r() * 40, r() * 3, 0, Math.PI * 2);
             ctx.fill();
@@ -281,22 +281,67 @@ export function cladMat(cladding: CladdingId, color: string): THREE.MeshStandard
 }
 
 /** Effen mat "klei"-materiaal zonder textuur. */
-export function clay(color: string, roughness = 0.88): THREE.MeshStandardMaterial {
-  const k = `clay|${color}|${roughness}`;
+export function clay(color: string, roughness = 0.88, doubleSided = false): THREE.MeshStandardMaterial {
+  const k = `clay|${color}|${roughness}|${doubleSided}`;
   let m = matCache.get(k);
   if (!m) {
-    m = new THREE.MeshStandardMaterial({ color: new THREE.Color(color), roughness, metalness: 0, envMapIntensity: 0.55 });
+    m = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(color),
+      roughness,
+      metalness: 0,
+      envMapIntensity: 0.55,
+      side: doubleSided ? THREE.DoubleSide : THREE.FrontSide,
+    });
     m.name = k;
     matCache.set(k, m);
   }
   return m;
 }
 
+/** Gestileerde weerspiegeling: zachte diagonale lichtbanen, in wereldeenheden (1 textuur = 1 cel). */
+let glassTex: THREE.CanvasTexture | null = null;
+function glassReflection() {
+  if (glassTex) return glassTex;
+  const c = document.createElement('canvas');
+  c.width = c.height = 256;
+  const ctx = c.getContext('2d')!;
+  ctx.fillStyle = '#000000';
+  ctx.fillRect(0, 0, 256, 256);
+  ctx.save();
+  ctx.translate(128, 128);
+  ctx.rotate(-Math.PI / 4.2);
+  for (const [off, w, a] of [
+    [-60, 46, 0.55],
+    [-4, 14, 0.4],
+    [70, 30, 0.3],
+  ] as [number, number, number][]) {
+    const g = ctx.createLinearGradient(off - w, 0, off + w, 0);
+    g.addColorStop(0, 'rgba(255,255,255,0)');
+    g.addColorStop(0.5, `rgba(255,255,255,${a})`);
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(off - w, -260, w * 2, 520);
+  }
+  ctx.restore();
+  glassTex = new THREE.CanvasTexture(c);
+  glassTex.wrapS = glassTex.wrapT = THREE.RepeatWrapping;
+  glassTex.colorSpace = THREE.SRGBColorSpace;
+  return glassTex;
+}
+
 export function glass(tint = '#2c3540'): THREE.MeshStandardMaterial {
   const k = `glass|${tint}`;
   let m = matCache.get(k);
   if (!m) {
-    m = new THREE.MeshStandardMaterial({ color: new THREE.Color(tint), roughness: 0.12, metalness: 0.1, envMapIntensity: 1.4 });
+    m = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(tint),
+      emissive: new THREE.Color('#8fa2b6'),
+      emissiveMap: glassReflection(),
+      emissiveIntensity: 0.5,
+      roughness: 0.12,
+      metalness: 0.1,
+      envMapIntensity: 1.4,
+    });
     m.name = k;
     matCache.set(k, m);
   }
@@ -360,6 +405,21 @@ export function curtain(): THREE.MeshStandardMaterial {
 }
 
 const signTexCache = new Map<string, THREE.CanvasTexture>();
+
+/** Materialen voor de letters van een gevelbord (letters + zachte schaduwlaag). */
+export function letterMats(text: string, vertical: boolean, color: string) {
+  const k = `letters|${text}|${vertical}|${color}`;
+  let m = matCache.get(k);
+  let sh = matCache.get(`${k}|shadow`);
+  if (!m || !sh) {
+    const tex = textTexture(text, vertical, color);
+    m = new THREE.MeshStandardMaterial({ map: tex, transparent: true, roughness: 0.6, alphaTest: 0.2 });
+    sh = new THREE.MeshStandardMaterial({ map: tex, transparent: true, color: '#000000', opacity: 0.18, alphaTest: 0.2 });
+    matCache.set(k, m);
+    matCache.set(`${k}|shadow`, sh);
+  }
+  return { letters: m, shadow: sh, tex: m.map as THREE.CanvasTexture };
+}
 /** Tekst-textuur voor gevelborden (letters licht op transparant). */
 export function textTexture(text: string, vertical: boolean, color: string): THREE.CanvasTexture {
   const k = `${text}|${vertical}|${color}`;
