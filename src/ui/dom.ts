@@ -63,3 +63,28 @@ export function stars(n: number, max = 3) {
   for (let i = 0; i < max; i++) s.append(h('span', { class: i < n ? '' : 'off' }, '★'));
   return s;
 }
+
+/** Bevestiging in de pagina zelf (systeemdialogen werken niet overal, bv. in ingesloten weergaven). */
+export function ask(message: string, okLabel = 'Doorgaan'): Promise<boolean> {
+  return new Promise((resolve) => {
+    let done = false;
+    const finish = (v: boolean) => {
+      if (done) return;
+      done = true;
+      close();
+      resolve(v);
+    };
+    const body = h(
+      'div',
+      null,
+      h('p', { style: 'margin:0 0 16px;line-height:1.45' }, message),
+      h(
+        'div',
+        { style: 'display:flex;gap:8px;justify-content:flex-end' },
+        h('button', { class: 'btn', onclick: () => finish(false) }, 'Annuleren'),
+        h('button', { class: 'btn primary', onclick: () => finish(true) }, okLabel),
+      ),
+    );
+    const close = modal('Weet je het zeker?', body, { small: true, onClose: () => finish(false) });
+  });
+}

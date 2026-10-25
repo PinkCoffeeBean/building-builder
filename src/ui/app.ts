@@ -29,7 +29,7 @@ import {
   saveDesign,
   saveStars,
 } from '../storage/storage';
-import { clear, h, modal, stars, toast } from './dom';
+import { ask, clear, h, modal, stars, toast } from './dom';
 import { ThumbRenderer } from './thumbs';
 
 const AUTOSAVE = 'gevelbouwer.autosave.v1';
@@ -621,8 +621,8 @@ export class App {
 
   /* ================================================================== opslaan & delen */
 
-  newDesign() {
-    if (this.store.dirty && !confirm('Huidig ontwerp sluiten? Niet-opgeslagen wijzigingen gaan verloren.')) return;
+  async newDesign() {
+    if (this.store.dirty && !(await ask('Huidig ontwerp sluiten? Niet-opgeslagen wijzigingen gaan verloren.', 'Sluiten'))) return;
     this.store.load(emptyDesign());
     this.mission = null;
     this.updateHud();
@@ -637,7 +637,7 @@ export class App {
       this.store.dirty = false;
       toast(`“${this.store.design.name}” opgeslagen in de galerij`);
     } catch (e) {
-      alert('Opslaan mislukt: de opslag van je browser is vol. Verwijder oude ontwerpen in de galerij.');
+      toast('Opslaan mislukt: de browseropslag is vol. Verwijder oude ontwerpen in de galerij.');
       console.error(e);
     }
   }
@@ -656,7 +656,7 @@ export class App {
         this.store.load(d);
         toast(`“${d.name}” geïmporteerd`);
       } catch (e) {
-        alert(`Kon dit bestand niet lezen: ${(e as Error).message}`);
+        toast(`Kon dit bestand niet lezen: ${(e as Error).message}`);
       }
     };
     inp.click();
@@ -667,8 +667,8 @@ export class App {
   openGallery() {
     const body = h('div');
     let close = () => {};
-    const open = (d: Design, id: string | null) => {
-      if (this.store.dirty && !confirm('Huidig ontwerp sluiten? Niet-opgeslagen wijzigingen gaan verloren.')) return;
+    const open = async (d: Design, id: string | null) => {
+      if (this.store.dirty && !(await ask('Huidig ontwerp sluiten? Niet-opgeslagen wijzigingen gaan verloren.', 'Sluiten'))) return;
       this.store.load(d, id);
       close();
     };
@@ -706,7 +706,7 @@ export class App {
       const load = () => {
         const d = loadDesign(m.id);
         if (d) open(d, m.id);
-        else alert('Dit ontwerp kon niet worden geladen.');
+        else toast('Dit ontwerp kon niet worden geladen.');
       };
       const card = h(
         'div',
@@ -733,8 +733,8 @@ export class App {
             {
               class: 'icon-btn danger',
               title: 'Verwijderen',
-              onclick: () => {
-                if (!confirm(`“${m.name}” verwijderen?`)) return;
+              onclick: async () => {
+                if (!(await ask(`“${m.name}” verwijderen uit de galerij?`, 'Verwijderen'))) return;
                 deleteDesign(m.id);
                 if (this.store.savedId === m.id) this.store.savedId = null;
                 card.remove();
@@ -910,9 +910,9 @@ export class App {
     close = modal('Opdrachten', body);
   }
 
-  startMission(m: Mission, fresh: boolean) {
+  async startMission(m: Mission, fresh: boolean) {
     if (fresh) {
-      if (this.store.dirty && !confirm('Leeg beginnen? Niet-opgeslagen wijzigingen gaan verloren.')) return;
+      if (this.store.dirty && !(await ask('Leeg beginnen? Niet-opgeslagen wijzigingen gaan verloren.', 'Leeg beginnen'))) return;
       const d = emptyDesign(m.title);
       this.store.load(d);
     }
